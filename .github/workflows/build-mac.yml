@@ -1,0 +1,25 @@
+name: Build macOS plugin
+on:
+  workflow_dispatch:
+  push:
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+      - name: Build
+        run: cmake --build build --config Release -j4
+      - name: Package
+        run: |
+          mkdir out
+          cp -R "build/RackStrip_artefacts/Release/VST3/Rack Strip.vst3" out/
+          cp -R "build/RackStrip_artefacts/Release/AU/Rack Strip.component" out/
+          codesign --force --deep -s - "out/Rack Strip.vst3"
+          codesign --force --deep -s - "out/Rack Strip.component"
+          ditto -c -k --keepParent out RackStrip-macOS.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RackStrip-macOS
+          path: RackStrip-macOS.zip
